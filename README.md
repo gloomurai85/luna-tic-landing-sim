@@ -1,2 +1,195 @@
-# luna-tic-landing-sim
-This mini-project implements LUNA-TIC (Lunar Uncertainty Numerical Analysis – Trajectory Integration & Calculations), a simple 1D Monte Carlo tool for human lunar terminal descent. It integrates the vertical trajectory under uncertain mass, thrust, and burn conditions, then computes basic human-rated safety metrics (g-load and touchdown speed).
+# LUNA-TIC Human Lunar Landing Monte Carlo Simulation 
+
+**Brief Description**
+LUNA-TIC (Lunar Uncertainty Numerical Analysis – Trajectory Integration & Calculations) is a simple 1D Monte Carlo simulator for human lunar terminal descent. It integrates the vertical trajectory of a lander near the Moon under uncertain mass, thrust, and burn conditions and then evaluates basic human-rated safety metrics such as touchdown speed and crew g-load.
+
+---
+
+## What this project does
+
+This mini-project models a two phase lunar decent, focusing on vertical motion close to the surface. The simulator tracks:
+
+- Altitude above the lunar surface  
+- Vertical velocity (downward positive)  
+- Engine thrust during a terminal braking burn  
+- Maximum g-load felt by the crew (in Earth g’s)  
+- Touchdown vertical speed and a Boolean safe landing flag  
+
+A landing is labeled safe if both:
+
+- Touchdown vertical speed is below a specified limit  
+- Maximum g-load stays below a human-rating limit  
+
+---
+
+## Numerical methods
+
+The code uses two standard numerical techniques.
+
+### 1. Time integration of ODEs
+
+The 1D vertical dynamics near the surface are
+
+- `dv/dt = g_lunar - T/m`  
+- `dh/dt = -v`  
+
+with a two-phase descent profile:
+
+1. **Powered braking**  
+   Constant thrust is applied until the downward vertical speed is reduced to a small target value `v_target`.
+
+2. **Engine-off free fall**  
+   After the burn is cut, the lander falls under lunar gravity only. The crew are effectively weightless in this phase; proper g-load is set to zero here and only the powered phase contributes to the felt g’s.
+
+These equations are integrated in time using a **first-order explicit Euler method** with a semi-implicit altitude update:
+
+- `v_{n+1} = v_n + a_n * dt`  
+- `h_{n+1} = h_n - v_{n+1} * dt`  
+
+The scheme is simple to read, which is intentional for this mini-project. It has global error of order `O(dt)`. A small time step `dt` is chosen so that the terminal descent (tens of seconds) is resolved adequately.
+
+### 2. Monte Carlo estimation
+
+Uncertainty is modeled by treating several inputs as random variables:
+
+- Lander mass  
+- Altitude at which the terminal burn begins  
+- Vertical speed at burn start  
+- Engine thrust level  
+
+A Monte Carlo loop draws many independent samples from Gaussian distributions and runs the deterministic simulator once per sample. After `N` runs, the code estimates:
+
+- The fraction of safe landings  
+- The distribution of touchdown speeds  
+- The distribution of maximum g-loads  
+
+Monte Carlo converges statistically with error scaling like `1/sqrt(N)`. It is not the fastest possible uncertainty quantification method, but it is conceptually simple and well suited to this context.
+
+### Verification pathway
+
+The `verification.py` module runs a **pure free-fall test** with no thrust:
+
+- `dv/dt = g_lunar`, `dh/dt = -v`  
+- Analytic solution: `h_exact(t) = h0 - 0.5 * g_lunar * t^2`
+
+The script integrates this with the same Euler scheme for several time steps `dt` and prints the maximum altitude error for each. The error decreases as `dt` is reduced, which is consistent with the expected first-order behavior and provides a basic check that the integrator is implemented correctly.
+
+---
+
+## Getting started
+
+### Prerequisites
+
+- Python 3.10 or later  
+- `pip` for installing dependencies  
+- `git` if you want to clone the repository directly
+
+### Installation
+
+Clone the repository and install dependencies:
+
+```
+bash
+git clone https://github.com/<your-username>/luna-tic-landing-sim.git
+cd luna-tic-landing-sim
+```
+
+# Optional: create and activate a virtual environment here
+
+pip install -r requirements.txt
+
+The `requirements.txt` file lists the only two dependencies:
+
+- `numpy` for numerical work  
+- `matplotlib` for plotting histograms  
+
+---
+
+## Quickstart- Running a Monte Carlo experiment
+
+From the repository root:
+
+```
+bash
+python run_monte_carlo.py --samples 1000
+```
+
+If successful, you should see output similar to:
+
+```
+bash    
+=== Luna TIC Monte Carlo summary ===
+    Total runs            : 1000
+    Safe landing fraction : 0.87
+    Mean touchdown speed  : 2.10 m/s
+    Mean max g-load       : 3.45 g
+```
+
+Two histogram plots will also open:
+
+- Touchdown vertical speed distribution  
+- Maximum g-load distribution  
+
+Changing the `--samples` argument adjusts the number of Monte Carlo runs.
+
+---
+
+## Running the verification test
+
+To run the free-fall convergence test:
+
+```
+bash
+python -c "from luna_lander.verification import free_fall_convergence; free_fall_convergence()"
+```
+
+This prints a small table with columns:
+
+- Time step `dt`  
+- Maximum absolute altitude error compared to the analytic solution  
+
+This table can is evidence that the numerical method behaves as expected when `dt` is refined.
+
+---
+
+## Repository layout
+
+```
+bash
+    luna-tic-landing-sim/          # repo root
+    ├── README.md                  # overview and build/run instructions
+    ├── requirements.txt           # numpy and matplotlib
+    ├── run_monte_carlo.py         # command-line entry point and plotting
+    └── luna_lander/
+        ├── __init__.py            # package docstring and high-level description
+        ├── sim.py                 # 1D vertical dynamics and Euler time integrator
+        ├── monte_carlo.py         # sampling of uncertainties and batch execution
+        └── verification.py        # free-fall convergence/verification test
+```
+
+---
+
+## Assumptions and limitations
+
+To keep the model transparent and manageable for this mini-project, several simplifying assumptions are made:
+
+- Motion is purely vertical near the surface. Horizontal dynamics, attitude control and terrain slope are neglected.  
+- Lunar gravity is constant and uniform.  
+- The terminal braking burn uses a fixed thrust magnitude and a simple cut-off rule (`v <= v_target`). No detailed guidance or optimal control is modeled.  
+- Human factors are represented by two scalar criteria:
+  - Maximum g-load below a fixed limit  
+  - Touchdown speed below a fixed limit  
+- Time integration uses a first-order Euler method. Accuracy is controlled by step size and checked via the free-fall test.
+
+These choices are sufficient to illustrate numerical methods, uncertainty propagation, and basic human-rating logic without turning the project into a full flight dynamics code.
+
+---
+
+## Possible extensions
+
+If more time were available, natural next steps would include:
+
+- Adding horizontal motion and surface slope to study tipping risk and landing stability.  
+- Replacing Euler with a higher-order method (for example, RK4) to reduce time-discretization error.  
+- Allowing the same code to analyze Mars or other bodies by changing gravity and atmospheric models.  
+- Introducing configuration files or a small front end to swap between crewed, cargo or emergency-abort mission profiles.
