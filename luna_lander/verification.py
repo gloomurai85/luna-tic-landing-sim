@@ -83,27 +83,70 @@ def free_fall_numeric(h0: float, v0: float, g: float, dt: float, t_final: float)
     return np.array(ts), np.array(hs)
 
 
-def free_fall_convergence(test_cfg: FreeFallTestConfig | None = None):
+def free_fall_convergence() -> None:
+
     """
-    Print max altitude error for several time steps.
+    Free-fall analytic comparison and diagnostic error-vs-dt plot.
 
-    Analytic solution:
-        h_exact(t) = h0 - 0.5 * g * t^2
+    This function integrates a simple 1D free-fall trajectory with the
+    same explicit Euler scheme used in the main lander model and compares
+    it to the analytic solution h_exact(t) = h0 - 0.5 * g * t^2.
 
-    For a first-order Euler scheme we expect the error to decrease roughly
-    linearly with dt.
+    It prints a small convergence table and also generates a log-log plot
+    of max altitude error vs. time step dt. The roughly linear trend in
+    log-log space is consistent with the expected first-order accuracy of
+    Euler's method and serves as the primary verification/diagnostic plot
+    for this mini-project.
     """
-    if test_cfg is None:
-        test_cfg = FreeFallTestConfig()
 
-    print("Free-fall convergence test")
-    print(f"h0 = {test_cfg.h0} m, v0 = {test_cfg.v0} m/s, g = {test_cfg.g_lunar} m/s^2")
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    h0 = 1000.0
+    v0 = 0.0
+    g = 1.62
+
+    # Time steps to test (coarse -> fine)
+    dt_values = [0.400, 0.200, 0.100, 0.050]
+
+    print("--- Free-fall convergence test ---")
+    print(f"h0 = {h0:.1f} m, v0 = {v0:.1f} m/s, g = {g:.2f} m/s^2")
     print("dt [s]   max |h_num - h_exact| [m]")
 
-    for dt in test_cfg.dts:
-        t, h_num = free_fall_numeric(
-            test_cfg.h0, test_cfg.v0, test_cfg.g_lunar, dt, test_cfg.t_final
-        )
-        h_exact = test_cfg.h0 - 0.5 * test_cfg.g_lunar * t**2
-        max_err = float(np.max(np.abs(h_exact - h_num)))
-        print(f"{dt:6.3f}   {max_err:10.5f}")
+    errors = []
+
+    for dt in dt_values:
+        # Explicit Euler on the same equations used in the main code:
+        # dh/dt = -v, dv/dt = g (downward positive)
+        t = [0.0]
+        h = [h0]
+        v = [v0]
+
+        while h[-1] > 0.0:
+            a = g                     # free-fall acceleration
+            v_new = v[-1] + a * dt
+            h_new = h[-1] - v_new * dt
+
+            t.append(t[-1] + dt)
+            v.append(v_new)
+            h.append(h_new)
+
+        t_arr = np.array(t)
+        h_arr = np.array(h)
+
+        # Analytic solution for comparison
+        h_exact = h0 - 0.5 * g * t_arr**2
+        max_err = float(np.max(np.abs(h_arr - h_exact)))
+        errors.append(max_err)
+
+        print(f"{dt:6.3f}      {max_err:8.5f}")
+
+    # Diagnostic plot: error vs. time step
+    plt.figure()
+    plt.loglog(dt_values, errors, "o-")
+    plt.xlabel("time step dt [s]")
+    plt.ylabel("max altitude error [m]")
+    plt.title("Free-fall convergence of Euler integrator")
+    plt.grid(True, which="both")
+    plt.tight_layout()
+    plt.show()
