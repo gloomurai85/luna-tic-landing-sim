@@ -7,9 +7,10 @@ LUNA-TIC (Lunar Uncertainty Numerical Analysis – Trajectory Integration & Calc
 
 ## What this project does
 
-This mini-project models a **two-phase lunar descent** close to the surface:
-(1) a powered braking burn, followed by  
-(2) engine-off free fall down to touchdown.
+This mini-project models a **two-phase** lunar descent, focusing on vertical motion close to the surface:
+
+1. A powered braking phase where the engine delivers constant thrust to reduce the downward speed.
+2. An engine-off free-fall phase from that point down to the surface.
 
 The simulator tracks:
 
@@ -22,7 +23,14 @@ The simulator tracks:
 A landing is labeled safe if both:
 
 - Touchdown vertical speed is below a specified limit  
-- Maximum g-load stays below a human-rating limit  
+- Maximum g-load stays below a human-rating limit
+
+In this implementation, the limits are fixed to
+
+- Touchdown vertical speed ≤ **3 m/s**  
+- Maximum crew g-load ≤ **5 g**
+
+These values are rough stand-ins for “soft” landings and acceptable transient crew loads based on Apollo lander studies and more recent human-rating work for vehicles like Orion. Real missions would tune these numbers using detailed landing-gear design and occupant-protection analysis, but 3 m/s and 5 g give a reasonable human-rated target for this mini-project.
 
 ---
 
@@ -61,11 +69,23 @@ Uncertainty is modeled by treating several inputs as random variables:
 - Vertical speed at burn start  
 - Engine thrust level  
 
+Here, the mass is intentionally random. It represents variation in payload and remaining propellant at the start of terminal descent, rather than assuming every landing happens at exactly the same vehicle mass. In the default configuration, the lander mass is modeled as a Gaussian distribution, centered at 15,000 kg with a standard deviation of 500 kg.
+
 A Monte Carlo loop draws many independent samples from Gaussian distributions and runs the deterministic simulator once per sample. After `N` runs, the code estimates:
 
 - The fraction of safe landings  
 - The distribution of touchdown speeds  
-- The distribution of maximum g-loads  
+- The distribution of maximum g-loads
+
+### Why look at distributions, not just one number
+
+A single nominal landing speed is insufficient for design purposes. The histograms of touchdown speeds and g-loads show
+
+- how often the vehicle stays near the desired soft-landing regime  
+- how fat the tail of bad outcomes is  
+- whether small changes in mass, thrust, or timing push many trajectories over the safety limits  
+
+In other words, the distribution of touchdown conditions is what allows you to discuss risk. The safe-landing fraction is just one summary of that distribution.
 
 Monte Carlo converges statistically with error scaling like `1/sqrt(N)`. It is not the fastest possible uncertainty quantification method, but it is conceptually simple and well-suited to this context.
 
@@ -113,17 +133,17 @@ The `requirements.txt` file lists the only two dependencies:
 From the repository root:
 
 ```
-python run_monte_carlo.py --samples 500
+python run_monte_carlo.py --samples 1000
 ```
 
 If successful, you should see output similar to:
 
 ```  
 === LUNA-TIC Monte Carlo summary ===
-    Total runs            : 500
-    Safe landing fraction : ...
-    Mean touchdown speed  : ...
-    Mean max g-load       : ...
+    Total runs            : 1000
+    Safe landing fraction : 0.0xx
+    Mean touchdown speed  : 53.xx
+    Mean max g-load       : 0.xx
 
 Sampling configuration:
   mass_mean     = 15000.0 kg
@@ -139,7 +159,7 @@ Two histogram plots will also open:
 - Touchdown vertical speed distribution  
 - Maximum g-load distribution  
 
-Changing the `--samples` argument adjusts the number of Monte Carlo runs.
+You can change the number of samples, the mean burn-start speed, the nominal thrust level, and the random seed through the `--samples`, `--v0-mean`, `--thrust-mult`, and `--seed` command-line arguments.
 
 ---
 
