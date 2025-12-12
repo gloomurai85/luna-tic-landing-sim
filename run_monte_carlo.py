@@ -47,48 +47,115 @@ from luna_lander.sim import DescentConfig, BurnProfile
 from luna_lander.monte_carlo import MonteCarloConfig, run_monte_carlo
 
 
-def main():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Monte Carlo simulation of LUNA-TIC human lunar landing."
+        description="LUNA-TIC Monte Carlo human lunar landing simulation"
     )
+
     parser.add_argument(
         "--samples",
         type=int,
-        default=1000,
-        help="Number of Monte Carlo landing simulations.",
+        default=500,
+        help="number of Monte Carlo samples (default: 500)",
     )
-    args = parser.parse_args()
 
-    mc_cfg = MonteCarloConfig(n_samples=args.samples)
-    descent_cfg = DescentConfig(dt=0.02, touchdown_velocity_limit=3.0, max_g_limit=5.0)
-    burn_profile = BurnProfile(thrust=mc_cfg.thrust_nominal, v_target=2.0)
+    parser.add_argument(
+        "--v0-mean",
+        type=float,
+        default=25.0,
+        help="mean downward speed at burn start in m/s (default: 25.0)",
+    )
 
-    results = run_monte_carlo(mc_cfg, descent_cfg, burn_profile)
+    parser.add_argument(
+        "--thrust-mult",
+        type=float,
+        default=3.0,
+        help=(
+            "multiplicative factor on lunar weight for nominal thrust "
+            "(T_nominal = thrust_mult * m_mean * g_lunar, default: 3.0)"
+        ),
+    )
 
-    success_fraction = float(np.mean(results.successes))
-    mean_v_touch = float(np.mean(results.touchdown_vs))
-    mean_max_g = float(np.mean(results.max_gs))
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=1,
+        help="random seed for Monte Carlo sampling (default: 1)",
+    )
+
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    # Numerical settings for the descent integrator
+    descent_cfg = DescentConfig(
+        # keep defaults for g_lunar, g0, dt, max_time, limits
+    )
+
+    # Nominal mass used to size thrust; matches MonteCarloConfig default
+    mass_mean = 15000.0
+
+    # Monte Carlo configuration, partly driven by CLI arguments
+    mc_cfg = MonteCarloConfig(
+        n_samples=args.samples,
+        mass_mean=mass_mean,
+        v0_mean=args.v0_mean,
+        # Size nominal thrust as (thrust_mult * m_mean * g_lunar)
+        thrust_nominal=args.thrust_mult * mass_mean * descent_cfg.g_lunar,
+        seed=args.seed,
+    )
+
+    # Constant-thrust braking profile; v_target is fixed here but could also
+    # eventually be exposed as a CLI parameter or config-file option.
+    burn = BurnProfile(
+        thrust=mc_cfg.thrust_nominal,
+        v_target=2.0,
+    )
+
+    results = run_monte_carlo(
+        mc_cfg=mc_cfg,
+        descent_cfg=descent_cfg,
+        burn_profile=burn,
+    )
+
+    touchdown_vs = results.touchdown_vs
+    max_gs = results.max_gs
+    successes = results.successes
+
+    safe_fraction = np.mean(successes.astype(float))
+    mean_v = float(np.mean(touchdown_vs))
+    mean_g = float(np.mean(max_gs))
 
     print("--- LUNA-TIC Monte Carlo summary ---")
-    print(f"Total runs            : {mc_cfg.n_samples}")
-    print(f"Safe landing fraction : {success_fraction:.3f}")
-    print(f"Mean touchdown speed  : {mean_v_touch:.2f} m/s")
-    print(f"Mean max g-load       : {mean_max_g:.2f} g")
+    print(f"Total runs            : {results.config.n_samples:d}")
+    print(f"Safe landing fraction : {safe_fraction:6.3f}")
+    print(f"Mean touchdown speed  : {mean_v:6.2f} m/s")
+    print(f"Mean max g-load       : {mean_g:6.2f} g")
+    print()
+    print("Sampling configuration:")
+    print(f"  mass_mean     = {results.config.mass_mean:.1f} kg")
+    print(f"  h0_mean       = {results.config.h0_mean:.1f} m")
+    print(f"  v0_mean       = {results.config.v0_mean:.1f} m/s downward")
+    print(f"  thrust_nominal= {results.config.thrust_nominal:.1f} N")
+    print(f"  seed          = {results.config.seed:d}")
+    print()
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    # Histogram: touchdown vertical speed
+    plt.figure()
+    plt.hist(touchdown_vs, bins=40)
+    plt.xlabel("Touchdown vertical speed [m/s]")
+    plt.ylabel("Count")
+    plt.title("LUNA-TIC Monte Carlo: touchdown speed distribution")
 
-    axes[0].hist(results.touchdown_vs, bins=40, edgecolor="black")
-    axes[0].set_xlabel("Touchdown vertical speed [m/s]")
-    axes[0].set_ylabel("Count")
-    axes[0].set_title("Touchdown speed distribution")
+    # Histogram: maximum g-load
+    plt.figure()
+    plt.hist(max_gs, bins=40)
+    plt.xlabel("Maximum g-load [Earth g]")
+    plt.ylabel("Count")
+    plt.title("LUNA-TIC Monte Carlo: maximum g-load distribution")
 
-    axes[1].hist(results.max_gs, bins=40, edgecolor="black")
-    axes[1].set_xlabel("Maximum g-load [g]")
-    axes[1].set_ylabel("Count")
-    axes[1].set_title("Max g-load distribution")
-
-    fig.suptitle("LUNA-TIC terminal landing Monte Carlo")
-    plt.tight_layout()
     plt.show()
 
 
