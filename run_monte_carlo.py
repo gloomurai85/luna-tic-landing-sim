@@ -128,15 +128,15 @@ def main() -> None:
     mean_v = float(np.mean(touchdown_vs))
     mean_g = float(np.mean(max_gs))
 
-    # Neatly aligned summary table
-    label_width = 24   # width for the text labels on the left
-    pad = " " * 5  # exactly five spaces between ':' and the first digit
+    # Neatly aligned summary table: fixed padding after the colon
+    label_width = 24       # width for the text labels on the left
+    pad = " " * 5          # exactly five spaces between ':' and the first digit
 
     print("--- LUNA-TIC Monte Carlo summary ---")
-    print(f"{'Total runs':<{label_width}} : {results.config.n_samples:>{value_width}d}")
-    print(f"{'Safe landing fraction':<{label_width}} : {safe_fraction:>{value_width}.3f}")
-    print(f"{'Mean touchdown speed':<{label_width}} : {mean_v:>{value_width}.2f} m/s")
-    print(f"{'Mean max g-load':<{label_width}} : {mean_g:>{value_width}.2f} g")
+    print(f"{'Total runs':<{label_width}} :{pad}{results.config.n_samples:d}")
+    print(f"{'Safe landing fraction':<{label_width}} :{pad}{safe_fraction:.3f}")
+    print(f"{'Mean touchdown speed':<{label_width}} :{pad}{mean_v:.2f} m/s")
+    print(f"{'Mean max g-load':<{label_width}} :{pad}{mean_g:.2f} g")
     print()
     print("Sampling configuration:")
     print(f"  mass_mean     = {results.config.mass_mean:.1f} kg")
