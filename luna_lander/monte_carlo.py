@@ -66,18 +66,19 @@ class MonteCarloConfig:
     mass_mean: float = 15000.0          # kg
     mass_sigma: float = 500.0           # kg
 
+    # Start terminal burn around 1 km with modest dispersion
     h0_mean: float = 1000.0             # m, altitude at start of terminal burn
     h0_sigma: float = 50.0              # m
 
-    v0_mean: float = 40.0               # m/s downward at burn start
+    # Slightly gentler initial downward speed at burn start
+    v0_mean: float = 25.0               # m/s downward at burn start (was 40)
     v0_sigma: float = 5.0               # m/s
 
-    # Thrust sized so nominal case reaches ~2 m/s at the surface
-    thrust_nominal: float = 1.5 * mass_mean * 1.62  # ~1.5x lunar weight
-    thrust_sigma_fraction: float = 0.10             # 10% variation
+    # Stronger engine for human-rated descent: about 3x lunar weight
+    thrust_nominal: float = 3.0 * mass_mean * 1.62  # ~3x lunar weight
+    thrust_sigma_fraction: float = 0.15             # 15% variation
 
     seed: int = 1                       # RNG seed
-
 
 @dataclass
 class MonteCarloResults:
