@@ -109,17 +109,24 @@ The `requirements.txt` file lists the only two dependencies:
 From the repository root:
 
 ```
-python run_monte_carlo.py --samples 1000
+python run_monte_carlo.py --samples 500
 ```
 
 If successful, you should see output similar to:
 
 ```  
 === LUNA-TIC Monte Carlo summary ===
-    Total runs            : 1000
+    Total runs            : 500
     Safe landing fraction : ...
     Mean touchdown speed  : ...
     Mean max g-load       : ...
+
+Sampling configuration:
+  mass_mean     = 15000.0 kg
+  h0_mean       = 1000.0 m
+  v0_mean       = 25.0 m/s downward
+  thrust_nominal= 72900.0 N
+  seed          = 1
 ```
 Exact numbers will vary depending on the configuration; the defaults currently yield essentially zero safe landings due to burn sequencing and setup.
 
