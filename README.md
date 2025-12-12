@@ -7,7 +7,11 @@ LUNA-TIC (Lunar Uncertainty Numerical Analysis – Trajectory Integration & Calc
 
 ## What this project does
 
-This mini-project models a two-phase lunar descent, focusing on vertical motion close to the surface. The simulator tracks:
+This mini-project models a **two-phase lunar descent** close to the surface:
+(1) a powered braking burn, followed by  
+(2) engine-off free fall down to touchdown.
+
+The simulator tracks:
 
 - Altitude above the lunar surface  
 - Vertical velocity (downward positive)  
