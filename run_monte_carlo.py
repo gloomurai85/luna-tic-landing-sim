@@ -130,7 +130,7 @@ def main() -> None:
 
     # Neatly aligned summary table
     label_width = 24   # width for the text labels on the left
-    value_width = 9    # width for the numeric values on the right
+    pad = " " * 5  # exactly five spaces between ':' and the first digit
 
     print("--- LUNA-TIC Monte Carlo summary ---")
     print(f"{'Total runs':<{label_width}} : {results.config.n_samples:>{value_width}d}")
