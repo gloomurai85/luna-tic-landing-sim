@@ -87,7 +87,7 @@ class BurnProfile:
     """Simple model for terminal braking burn."""
 
     thrust: float                # constant engine thrust [N]
-    v_target: float = 2.0        # cut engine when v <= v_target (still downward)
+    v_target: float = 0.0        # cut engine when v <= v_target (still downward)
 
 
 @dataclass
