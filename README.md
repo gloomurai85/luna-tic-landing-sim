@@ -89,7 +89,6 @@ The script integrates this with the same Euler scheme for several time steps `dt
 Clone the repository and install dependencies:
 
 ```
-bash
 git clone https://github.com/gloomurai85/luna-tic-landing-sim.git
 cd luna-tic-landing-sim
 ```
@@ -110,20 +109,19 @@ The `requirements.txt` file lists the only two dependencies:
 From the repository root:
 
 ```
-bash
 python run_monte_carlo.py --samples 1000
 ```
 
 If successful, you should see output similar to:
 
-```
-text   
-=== Luna TIC Monte Carlo summary ===
+```  
+=== LUNA-TIC Monte Carlo summary ===
     Total runs            : 1000
-    Safe landing fraction : 0.87
-    Mean touchdown speed  : 2.10 m/s
-    Mean max g-load       : 3.45 g
+    Safe landing fraction : ...
+    Mean touchdown speed  : ...
+    Mean max g-load       : ...
 ```
+Exact numbers will vary depending on the configuration; the defaults currently yield essentially zero safe landings due to burn sequencing and setup.
 
 Two histogram plots will also open:
 
@@ -139,7 +137,6 @@ Changing the `--samples` argument adjusts the number of Monte Carlo runs.
 To run the free-fall convergence test:
 
 ```
-bash
 python -c "from luna_lander.verification import free_fall_convergence; free_fall_convergence()"
 ```
 
@@ -155,7 +152,6 @@ This table is evidence that the numerical method behaves as expected when `dt` i
 ## Repository layout
 
 ```
-text
     luna-tic-landing-sim/          # repo root
     ├── README.md                  # overview and build/run instructions
     ├── requirements.txt           # numpy and matplotlib
