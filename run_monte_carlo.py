@@ -128,8 +128,9 @@ def main() -> None:
     mean_v = float(np.mean(touchdown_vs))
     mean_g = float(np.mean(max_gs))
 
-    # Neatly formatted summary header
-    label_width = 24  # width of the left-hand labels
+    # Neatly aligned summary table
+    label_width = 24   # width for the text labels on the left
+    value_width = 9    # width for the numeric values on the right
 
     print("--- LUNA-TIC Monte Carlo summary ---")
     print(f"{'Total runs':<{label_width}} : {results.config.n_samples:>{value_width}d}")
