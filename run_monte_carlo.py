@@ -87,7 +87,7 @@ def main():
     axes[1].set_ylabel("Count")
     axes[1].set_title("Max g-load distribution")
 
-    fig.suptitle("Luna TIC terminal landing Monte Carlo")
+    fig.suptitle("LUNA-TIC terminal landing Monte Carlo")
     plt.tight_layout()
     plt.show()
 
