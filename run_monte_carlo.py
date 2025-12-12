@@ -144,14 +144,14 @@ def main() -> None:
 
     # Histogram: touchdown vertical speed
     plt.figure()
-    plt.hist(touchdown_vs, bins=40)
+    plt.hist(touchdown_vs, bins=40, edgecolor="black", linewidth=0.5)
     plt.xlabel("Touchdown vertical speed [m/s]")
     plt.ylabel("Count")
     plt.title("LUNA-TIC Monte Carlo: touchdown speed distribution")
 
     # Histogram: maximum g-load
     plt.figure()
-    plt.hist(max_gs, bins=40)
+    plt.hist(max_gs, bins=40, edgecolor="black", linewidth=0.5)
     plt.xlabel("Maximum g-load [Earth g]")
     plt.ylabel("Count")
     plt.title("LUNA-TIC Monte Carlo: maximum g-load distribution")
